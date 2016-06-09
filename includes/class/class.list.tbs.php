@@ -700,7 +700,10 @@ class TListviewTBS {
 		          ,legend: { position: "top" }
 				  ,animation: { "startup": false }
 				  ,height : '.$height.'
-				  ,colorAxis: {colors: ["#C1C1C1", "#5B5B5B"]}
+          	      ,colorAxis: {colors: ["#000000", "black", "#CCCCCC"]}
+          		  ,backgroundColor: "#4F6983"
+          		  ,datalessRegionColor: "#ffffff"
+         		  ,defaultColor: "#000000"
 		        };
 
 		        var chart = new google.visualization.GeoChart(document.getElementById("div_query_chart'.$this->id.'"));
