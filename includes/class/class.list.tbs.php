@@ -697,7 +697,7 @@ class TListviewTBS {
 		          region: "'.$TParam['region'].'",
 		          displayMode: "'.$TParam['chartType'].'",
 		          title: "'.addslashes($TParam['liste']['titre']).'"
-		          ,legend: { position: "top" }
+		          ,legend: "none"
 				  ,animation: { "startup": false }
 				  ,height : '.$height.'
           	      ,colorAxis: {colors: ["#000000", "black", "#CCCCCC"]}
