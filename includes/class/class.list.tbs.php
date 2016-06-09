@@ -202,6 +202,9 @@ class TListviewTBS {
 		if($TParam['type'] == 'chart') {
 			return $this->renderChart($TEntete, $TChamps,$TTotal, $TParam);	
 		}
+		elseif($TParam['type'] == 'geochart') {
+			return $this->renderGeoChart($TEntete, $TChamps,$TTotal, $TParam);	
+		}
 		else {
 			return $this->renderList($TEntete, $TChamps,$TTotal,$TTotalGroup, $TParam);	
 		}
@@ -582,6 +585,125 @@ class TListviewTBS {
 		        };
 
 		        var chart = new google.visualization.'.$type.'(document.getElementById("div_query_chart'.$this->id.'"));
+		
+		        chart.draw(data, options);
+		      }
+		  
+	    </script>
+		<div id="div_query_chart'.$this->id.'"></div>
+		'.$javaScript; 
+		
+		return $html;
+	}
+
+	private function renderGeoChart(&$TEntete, &$TChamps,&$TTotal, &$TParam) {
+		
+		$TData = array();
+		$header = '';
+		$first = true;
+		
+		$TSearch = $this->setSearch($TEntete, $TParam);
+		$TExport= $this->setExport($TParam, $TChamps, $TEntete);
+		
+		if(empty($TParam['xaxis']) && !empty($TEntete)) {
+			$fieldXaxis = key($TEntete);
+		}
+		else {
+			$fieldXaxis = $TParam['xaxis'];
+		}
+		
+		$TValue=array(); $key = null;
+		foreach($TEntete as $field=>&$entete) {
+			if($field!=$fieldXaxis)$TValue[] = addslashes($entete['libelle']);
+		}
+
+		$header='["'.addslashes( $TEntete[$fieldXaxis]['libelle'] ).'","'.implode('","', $TValue).'"]';
+
+		foreach($TChamps as &$row) {
+			$TValue=array();
+			$key = null;
+			
+			foreach($row as $k=>$v) {
+				
+				if($k == $fieldXaxis) {
+					$key = $v;
+				}
+				else {
+					$TValue[] = (float)$v;
+				}
+				
+			}
+
+			if(!is_null($key)) {
+				if(!isset($TData[$key])) $TData[$key] = $TValue;
+				else {
+					foreach($TData[$key] as $k=>$v) {
+						$TData[$key][$k]+=(float)$TValue[$k];
+					}
+					
+				}
+			}
+			
+			
+		}
+		
+		$data = $header;
+		foreach($TData as $key=>$TValue) {
+			
+			$data .= ',[ "'.$key.'", ';
+			foreach($TValue as $v) {
+				$data.=(float)$v.',';
+			}
+			
+			$data.=' ]';
+		}
+		
+		$height = empty($TParam['height']) ? 500 : $TParam['height'];
+		
+		// This feature is experimental and may change in future releases
+		$explorer = empty($TParam['explorer']) ? array() : $TParam['explorer']; // Note: The explorer only works with continuous axes (such as numbers or dates)
+		
+		$type = empty($TParam['chartType']) ? 'markers' : $TParam['chartType'];
+		
+		$html = '';
+		
+		if(!empty($TSearch)) {
+			
+			$html.='<table class="border searchbox">';
+			foreach($TSearch as $field=>$input) {
+				if(!empty($input)) {
+					$label = !empty($TParam['title'][$field]) ? $TParam['title'][$field] : $field;
+					$html.='<tr><td>'.$label.'</td><td>'.$input.'</td></tr>';	
+				}
+			}
+			
+			$html.='</table>';
+			
+		}
+		$javaScript = $this->getJS($TParam);
+		
+		$html.='<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+		<script type="text/javascript">
+		  
+		  	  google.load("visualization", "1", {"packages":["geochart"]});
+		      google.setOnLoadCallback(drawMarkersMap'.$this->id.');
+			
+			  function drawMarkersMap'.$this->id.'() {
+		        var data = google.visualization.arrayToDataTable([
+		          '.$data.'
+		        ]);
+	
+		        var options = {
+		          region: "'.$TParam['region'].'",
+		          displayMode: "'.$TParam['chartType'].'",
+		          title: "'.addslashes($TParam['liste']['titre']).'"
+		          ,legend: { position: "top" }
+				  ,animation: { "startup": false }
+				  ,height : '.$height.'
+				  ,colorAxis: {colors: ["#C1C1C1", "#5B5B5B"]}
+		        };
+
+		        var chart = new google.visualization.GeoChart(document.getElementById("div_query_chart'.$this->id.'"));
 		
 		        chart.draw(data, options);
 		      }
