@@ -78,9 +78,9 @@ class TListviewTBS {
 	private function getSearchKey($key, &$TParam) {
 				
 		$prefixe='';	
-		if(isset($TParam['search'][$key]['table']))$prefixe='`'.$TParam['search'][$key]['table'].'`.';
+		if(!empty($TParam['search'][$key]['table']))$prefixe='`'.$TParam['search'][$key]['table'].'`.';
 		
-		if(isset($TParam['search'][$key]['field']))$key =$prefixe.'`'. $TParam['search'][$key]['field'] .'`';
+		if(!empty($TParam['search'][$key]['field']))$key =$prefixe.'`'. $TParam['search'][$key]['field'] .'`';
 		else $key =$prefixe.'`'. strtr($key,';','*').'`';
 			
 		return $key;
@@ -926,6 +926,8 @@ class TListviewTBS {
 	private function in_view(&$TParam, $line_number) {
 		global $conf;
 		
+		if(!empty($TParam['export'])) return true; // doit être dans la vue
+
 		$page_number = !empty($TParam['limit']['page']) ? $TParam['limit']['page'] : 1;
 		$line_per_page = !empty($TParam['limit']['nbLine']) ? $TParam['limit']['nbLine'] : $conf->liste_limit;
 		
@@ -979,17 +981,20 @@ class TListviewTBS {
 						}
 						
 						if(isset($TParam['type'][$field])) {
-							if($TParam['type'][$field]=='date') {
-								if($row[$field] != '0000-00-00 00:00:00' && $row[$field] != '0000-00-00' && !empty($row[$field])) {
-									$row[$field] = date('d/m/Y', strtotime($row[$field]));
+							if($TParam['type'][$field]=='date' 
+								|| $TParam['type'][$field]=='datetime' ) {
+
+								if($row[$field] != '0000-00-00 00:00:00' && $row[$field] != '1000-01-01 00:00:00' && $row[$field] != '0000-00-00' && !empty($row[$field])) {
+									if($TParam['type'][$field]=='datetime')$row[$field] = dol_print_date(strtotime($row[$field]),'dayhoursec');
+									else $row[$field] = dol_print_date(strtotime($row[$field]),'day');
 								} else {
 									$row[$field] = '';
 								}
 							}
-							if($TParam['type'][$field]=='datetime') { $row[$field] = date('d/m/Y H:i:s', strtotime($row[$field])); }
 							if($TParam['type'][$field]=='hour') { $row[$field] = date('H:i', strtotime($row[$field])); }
 							if($TParam['type'][$field]=='money') { $row[$field] = '<div align="right">'.price($row[$field]).'</div>'; }
 							if($TParam['type'][$field]=='number') { $row[$field] = '<div align="right">'.price($row[$field]).'</div>'; }
+							if($TParam['type'][$field]=='integer') { $row[$field] = '<div align="right">'.(int)$row[$field].'</div>'; }
 						}
 	
 	                                        if(isset($TParam['link'][$field])) {
@@ -998,6 +1003,7 @@ class TListviewTBS {
 	                                        }
 	                                        
 	                                        if(isset($TParam['translate'][$field])) {
+							if(isset($TParam['translate'][$field][''])) unset($TParam['translate'][$field]['']);
 	                                                $row[$field] = strtr( $row[$field] , $TParam['translate'][$field]);
 	                                        }
 	
